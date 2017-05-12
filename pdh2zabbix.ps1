@@ -238,7 +238,7 @@ function createZabbixDiscoveryRuleXml ([string]$application, [string]$descriptio
   <type>0</type>
   <snmp_community/>
   <snmp_oid/>
-  <key>pdh2zbx.discovery[{#PDHINSTANCE},`"$application`"]</key>
+  <key>pdh2zbx.discovery[`"$application`"]</key>
   <delay>$DiscoveryDelay</delay>
   <status>$([byte]!$EnableItems)</status>
   <allowed_hosts/>
@@ -277,7 +277,7 @@ function createZabbixDiscoveryRuleXml ([string]$application, [string]$descriptio
 
 function createZabbixItemPrototypeXml ([string]$application, [string]$item, [string]$description, [int]$delta=0) {
     [xml]$xml="<item_prototype>
-  <name>$item</name>
+  <name>$item ({#PDHINSTANCE})</name>
   <type>0</type>
   <snmp_community/>
   <multiplier>0</multiplier>
@@ -311,14 +311,14 @@ function createZabbixItemPrototypeXml ([string]$application, [string]$item, [str
   <port/>
   <description>$description</description>
   <inventory_link>0</inventory_link>
-  <applications>
-    <application>
-      <name>$application</name>
-    </application>
-  </applications>
+  <applications />
   <valuemap/>
   <logtimefmt/>
-  <application_prototypes/>
+  <application_prototypes>
+    <application_prototype>
+      <name>$application</name>
+    </application_prototype>
+  </application_prototypes>
 </item_prototype>
 "
     return $xml
@@ -331,7 +331,7 @@ switch($Mode) {
             if($pdhCategory.CategoryType -eq [System.Diagnostics.PerformanceCounterCategoryType]::MultiInstance) {
                 $zbxDiscoveryData=@()
                 ForEach($pdhInstance in $pdhCategory.GetInstanceNames()) {
-                    $zbxDiscoveryData+=@{"#PDHINSTANCE"=$pdhInstance}
+                    $zbxDiscoveryData+=@{"{#PDHINSTANCE}"=$pdhInstance}
                 }
                 Write-Output $(ConvertTo-Json @{"data"=$ZbxDiscoveryData} -Depth 3)
             } else {
