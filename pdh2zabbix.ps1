@@ -287,7 +287,7 @@ function createZabbixItemPrototypeXml ([string]$application, [string]$item, [str
   <history>$KeepHistory</history>
   <trends>$KeepTrends</trends>
   <status>$([byte]!$EnableItems)</status>
-  <value_type>3</value_type>
+  <value_type>0</value_type>
   <allowed_hosts/>
   <units/>
   <delta>$delta</delta>
