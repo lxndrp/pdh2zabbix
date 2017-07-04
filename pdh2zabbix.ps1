@@ -47,6 +47,18 @@
 .PARAMETER EnableItems
     Specifies whether items, discovery rules and item prototypes are enabled by default.
         *For 'template' mode only*
+.PARAMETER CheckDelay
+    Specifies the Zabbix item update interval in seconds. See https://www.zabbix.com/documentation/3.2/manual/config/items/item for details.
+        *For 'template' mode only*
+.PARAMETER DiscoveryDelay
+    Specifies the Zabbix discovery update interval in seconds. See https://www.zabbix.com/documentation/3.2/manual/config/items/item for details.
+        *For 'template' mode only*
+.PARAMETER KeepHistory
+    Specifies the Zabbix history retention in days, See https://www.zabbix.com/documentation/3.2/manual/config/items/history_and_trends for details.
+        *For 'template' mode only*
+.PARAMETER KeepTrends
+    Specifies the Zabbix LLD interval in seconds. See https://www.zabbix.com/documentation/3.2/manual/discovery/low_level_discovery for details.
+        *For 'template' mode only*
 .PARAMETER PdhCounterSetNames
     Specifies the counter sets to be processed. Multiple space-separated names
     are acceptable; counters with spaces in the name must be quoted properly.
@@ -59,87 +71,88 @@
 #>
 param (
     [Parameter(
-        HelpMessage="Run in 'template' or 'discovery' mode"
+        HelpMessage = "Run in 'template' or 'discovery' mode"
     )]
     [Alias("m")]
     [ValidateSet(
         "template", "discovery"
     )]
-    [string]$Mode="discovery",
+    [string]$Mode = "discovery",
 
     [Parameter(
-        HelpMessage="Output file name",
-        ParameterSetName="template"
+        HelpMessage = "Output file name",
+        ParameterSetName = "template"
     )]
     [Alias("f")]
-    [string]$FileName="stdout",
+    [string]$FileName = "stdout",
     
     [Parameter(
-        HelpMessage="Template group",
-        ParameterSetName="template"
+        HelpMessage = "Template group",
+        ParameterSetName = "template"
     )]
     [Alias("G")]
-    [string]$Hostgroup="Templates",
+    [string]$Hostgroup = "Templates",
     
     [Parameter(
-        HelpMessage="Template name",
-        ParameterSetName="template"
+        HelpMessage = "Template name",
+        ParameterSetName = "template"
     )]
     [Alias("N")]
-    [string]$TemplateName="Template PDH Windows",
+    [string]$TemplateName = "Template PDH Windows",
     
     [Parameter(
-        HelpMessage="Enable all template items",
-        ParameterSetName="template"
+        HelpMessage = "Enable all template items",
+        ParameterSetName = "template"
     )]
     [Alias("e")]
-    [switch]$EnableItems=$false,
+    [switch]$EnableItems = $false,
 
     [Parameter(
-        HelpMessage="Check interval in seconds",
-        ParameterSetName="template"
+        HelpMessage = "Check interval in seconds",
+        ParameterSetName = "template"
     )]
-    [int]$CheckDelay=60,
+    [int]$CheckDelay = 60,
 
     [Parameter(
-        HelpMessage="Discovery interval in seconds",
-        ParameterSetName="template"
+        HelpMessage = "Discovery interval in seconds",
+        ParameterSetName = "template"
     )]
-    [int]$DiscoveryDelay=3600,
+    [int]$DiscoveryDelay = 3600,
 
     [Parameter(
-        HelpMessage="History retention in days",
-        ParameterSetName="template"
+        HelpMessage = "History retention in days",
+        ParameterSetName = "template"
     )]
-    [int]$KeepHistory=90,
+    [int]$KeepHistory = 90,
 
     [Parameter(
-        HelpMessage="Trends retention in days",
-        ParameterSetName="template"
+        HelpMessage = "Trends retention in days",
+        ParameterSetName = "template"
     )]
-    [int]$KeepTrends=365,
+    [int]$KeepTrends = 365,
 
     [Parameter(
-        Mandatory=$true,
-        ValueFromRemainingArguments=$true,
-        HelpMessage="PDH counter sets to use"
+        Mandatory = $true,
+        ValueFromRemainingArguments = $true,
+        HelpMessage = "PDH counter sets to use"
     )]
     [ValidateScript( {
-        foreach($arg in $_) {
-            if([System.Diagnostics.PerformanceCounterCategory]::Exists($arg)) {
-                continue
-            } else {
-                Throw [System.Management.Automation.ValidationMetadataException] "The PDH counter set '$arg' does not exist on this system."
-                return $false
+            foreach ($arg in $_) {
+                if ([System.Diagnostics.PerformanceCounterCategory]::Exists($arg)) {
+                    continue
+                }
+                else {
+                    Throw [System.Management.Automation.ValidationMetadataException] "The PDH counter set '$arg' does not exist on this system."
+                    return $false
+                }
             }
-        }
-        return $true
-    })]
+            return $true
+        })]
     [string[]]$PdhCounterSetNames
 )
 
 function createZabbixTemplateStub() {
-    [xml]$xml="<?xml version=`"1.0`" encoding=`"UTF-8`"?>
+    [xml]$xml = "<?xml version=`"1.0`" encoding=`"UTF-8`"?>
 <zabbix_export>
   <date>2017-02-17T11:38:41Z</date>
   <version>3.0</version>
@@ -178,15 +191,15 @@ function createZabbixTemplateStub() {
 }
 
 function createZabbixApplicationXml ([string]$applicationName) {
-    [xml]$xml="<application>
+    [xml]$xml = "<application>
   <name>$applicationName</name>
 </application>"
     return $xml
 }
 
-function createZabbixItemXml ([string]$application, [string]$name, [string]$description, [int]$delta=0) {
+function createZabbixItemXml ([string]$application, [string]$name, [string]$description, [int]$delta = 0) {
     
-    [xml]$xml="<item>
+    [xml]$xml = "<item>
   <name>$name</name>
   <type>0</type>
   <snmp_community/>
@@ -233,7 +246,7 @@ function createZabbixItemXml ([string]$application, [string]$name, [string]$desc
 }
 
 function createZabbixDiscoveryRuleXml ([string]$application, [string]$description) {
-    [xml]$xml="<discovery_rule>
+    [xml]$xml = "<discovery_rule>
   <name>$application Discovery</name>
   <type>0</type>
   <snmp_community/>
@@ -275,8 +288,8 @@ function createZabbixDiscoveryRuleXml ([string]$application, [string]$descriptio
     return $xml
 }
 
-function createZabbixItemPrototypeXml ([string]$application, [string]$item, [string]$description, [int]$delta=0) {
-    [xml]$xml="<item_prototype>
+function createZabbixItemPrototypeXml ([string]$application, [string]$item, [string]$description, [int]$delta = 0) {
+    [xml]$xml = "<item_prototype>
   <name>$item ({#PDHINSTANCE})</name>
   <type>0</type>
   <snmp_community/>
@@ -324,42 +337,45 @@ function createZabbixItemPrototypeXml ([string]$application, [string]$item, [str
     return $xml
 }
 
-switch($Mode) {
+switch ($Mode) {
     "discovery" {
-        if($PdhCounterSetNames.Length -eq 1) {
-            $pdhCategory=New-Object System.Diagnostics.PerformanceCounterCategory $PdhCounterSetNames[0]
-            if($pdhCategory.CategoryType -eq [System.Diagnostics.PerformanceCounterCategoryType]::MultiInstance) {
-                $zbxDiscoveryData=@()
-                ForEach($pdhInstance in $pdhCategory.GetInstanceNames()) {
-                    $zbxDiscoveryData+=@{"{#PDHINSTANCE}"=$pdhInstance}
+        if ($PdhCounterSetNames.Length -eq 1) {
+            $pdhCategory = New-Object System.Diagnostics.PerformanceCounterCategory $PdhCounterSetNames[0]
+            if ($pdhCategory.CategoryType -eq [System.Diagnostics.PerformanceCounterCategoryType]::MultiInstance) {
+                $zbxDiscoveryData = @()
+                ForEach ($pdhInstance in $pdhCategory.GetInstanceNames()) {
+                    $zbxDiscoveryData += @{"{#PDHINSTANCE}" = $pdhInstance}
                 }
-                Write-Output $(ConvertTo-Json @{"data"=$ZbxDiscoveryData} -Depth 3)
-            } else {
+                Write-Output $(ConvertTo-Json @{"data" = $ZbxDiscoveryData} -Depth 3)
+            }
+            else {
                 Write-Error "counter set $($pdhCategory.CategoryName) is not discoverable; please use 'MultiInstance' CounterSetTypes only."
                 exit 3
             }
             
-        } else {
+        }
+        else {
             Write-Error "'discovery' mode cannot handle multiple PDH counter sets; please specify only one."
             exit 2
         }
     }
     "template" {
-        $templateXml=createZabbixTemplateStub
-        $applicationsXmlHook=$templateXml.SelectSingleNode("/zabbix_export/templates/template/applications")
-        $itemsXmlHook=$templateXml.SelectSingleNode("/zabbix_export/templates/template/items")
-        $discoveryRulesXmlHook=$templateXml.SelectSingleNode("/zabbix_export/templates/template/discovery_rules")
-        foreach($pdhCounterSetName in $PdhCounterSetNames) {
-            $pdhCategory=New-Object System.Diagnostics.PerformanceCounterCategory $pdhCounterSetName
-            if([System.Diagnostics.PerformanceCounterCategoryType]::SingleInstance.Equals($pdhCategory.CategoryType)) {
+        $templateXml = createZabbixTemplateStub
+        $applicationsXmlHook = $templateXml.SelectSingleNode("/zabbix_export/templates/template/applications")
+        $itemsXmlHook = $templateXml.SelectSingleNode("/zabbix_export/templates/template/items")
+        $discoveryRulesXmlHook = $templateXml.SelectSingleNode("/zabbix_export/templates/template/discovery_rules")
+        foreach ($pdhCounterSetName in $PdhCounterSetNames) {
+            $pdhCategory = New-Object System.Diagnostics.PerformanceCounterCategory $pdhCounterSetName
+            if ([System.Diagnostics.PerformanceCounterCategoryType]::SingleInstance.Equals($pdhCategory.CategoryType)) {
                 # create "Application" and "Item" XML fragments:
                 $applicationsXmlHook.AppendChild($templateXml.ImportNode((createZabbixApplicationXml $pdhCategory.CategoryName).get_DocumentElement(), $true)) | Out-Null
-                foreach($pdhCounter in $pdhCategory.GetCounters()) {
+                foreach ($pdhCounter in $pdhCategory.GetCounters()) {
                     $itemsXmlHook.AppendChild($templateXml.ImportNode((createZabbixItemXml $pdhCounter.CategoryName $pdhCounter.CounterName $pdhCounter.CounterHelp).get_DocumentElement(), $true)) | Out-Null
                 }
-            } elseif([System.Diagnostics.PerformanceCounterCategoryType]::MultiInstance.Equals($pdhCategory.CategoryType)) {
+            }
+            elseif ([System.Diagnostics.PerformanceCounterCategoryType]::MultiInstance.Equals($pdhCategory.CategoryType)) {
                 # create "<discovery_rule>" and "<item_prototype>" XML fragments:
-                $discoveryRuleNode=$templateXml.ImportNode((createZabbixDiscoveryRuleXml $pdhCategory.CategoryName $pdhCategory.CategoryHelp).get_DocumentElement(), $true)
+                $discoveryRuleNode = $templateXml.ImportNode((createZabbixDiscoveryRuleXml $pdhCategory.CategoryName $pdhCategory.CategoryHelp).get_DocumentElement(), $true)
                 $discoveryRulesXmlHook.AppendChild($discoveryRuleNode) | Out-Null
                 # .NET clusterf*ck: Since we cannot iterate over the generalized
                 #     counter objects of a multi-instance category, we always
@@ -368,10 +384,10 @@ switch($Mode) {
                 #     with different counter sets on different instances.
                 #     However, this never seems to be the case; as such, we
                 #     have to live with this API limitation.
-                $counterInstanceNames=$pdhCategory.GetInstanceNames()
-                $pdhCounters=$pdhCategory.GetCounters($counterInstanceNames[0])
-                foreach($pdhCounter in $pdhCounters) {
-                    $itemPrototypeXmlHook=$discoveryRuleNode.SelectSingleNode("//discovery_rule/item_prototypes")
+                $counterInstanceNames = $pdhCategory.GetInstanceNames()
+                $pdhCounters = $pdhCategory.GetCounters($counterInstanceNames[0])
+                foreach ($pdhCounter in $pdhCounters) {
+                    $itemPrototypeXmlHook = $discoveryRuleNode.SelectSingleNode("//discovery_rule/item_prototypes")
                     $itemPrototypeXmlHook.AppendChild($templateXml.ImportNode((createZabbixItemPrototypeXml $pdhCounter.CategoryName $pdhCounter.CounterName $pdhCounter.CounterHelp).get_DocumentElement(), $true)) | Out-Null
                 }
             }
@@ -384,9 +400,10 @@ switch($Mode) {
         $templateXml.WriteTo($xw);
         $xw.Flush();
         $sw.Flush();
-        if($FileName -eq "stdout") {
+        if ($FileName -eq "stdout") {
             Write-Output $sw.ToString()
-        } else {
+        }
+        else {
             Out-File -FilePath $FileName -InputObject $sw.ToString()
         }
     }
