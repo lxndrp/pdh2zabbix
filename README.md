@@ -32,45 +32,45 @@ Specifies the mode this script will run in. Possible alternatives are:
 
 `-FileName <String>`
 Specifies the output file name for XML output.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-Hostgroup <String>`
 Specifies the hostgroup the generated template belogs to.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-TemplateName <String>`
 Specifies the name of the generated template.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-EnableItems [<SwitchParameter>]`
 Specifies whether items, discovery rules and item prototypes are enabled by default.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-CheckDelay <Int32>`
 Specifies the Zabbix [item update interval](https://www.zabbix.com/documentation/3.2/manual/config/items/item) in seconds.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-DiscoveryDelay <Int32>`
 Specifies the Zabbix [discovery update interval](https://www.zabbix.com/documentation/3.2/manual/config/items/item) in seconds.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-KeepHistory <Int32>`
 Specifies the Zabbix [history retention](https://www.zabbix.com/documentation/3.2/manual/config/items/history_and_trends) in days.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-KeepTrends <Int32>`
 Specifies the Zabbix [LLD interval](https://www.zabbix.com/documentation/3.2/manual/discovery/low_level_discovery) in seconds.
-*For 'template' mode only*
+***For 'template' mode only***
 
 `-PdhCounterSetNames <String[]>`
 Specifies the counter sets to be processed. Multiple space-separated names are acceptable; counters with spaces in the name must be quoted properly.
 
 ## Examples
-Run a low-level discovery on the 'Network Interface' counter set:
+Run a low-level discovery on the `Network Interface` counter set:
 ```Powershell
 PS ~>pdh2zabbix.ps1 "Network Interface"
 ```
-Create a template for the 'ICMP' counter set, named 'example.com Template PDH ICMP' with all items enabled:
+Create a template for the `ICMP` counter set, named *example.com Template PDH ICMP* with all items enabled:
 ```Powershell   
 PS ~>pdh2zabbix.ps1 -Mode template -TemplateName "example.com Template PDH ICMP" -EnableItems ICMP
 ```
