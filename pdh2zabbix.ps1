@@ -198,14 +198,15 @@ function createZabbixApplicationXml ([string]$applicationName) {
 }
 
 function createZabbixItemXml ([string]$application, [string]$name, [string]$description, [int]$delta = 0) {
-    
+    $escapedName = [System.Security.SecurityElement]::Escape($name)
+    $escapedDescription = [System.Security.SecurityElement]::Escape($description)
     [xml]$xml = "<item>
-  <name>$name</name>
+  <name>$escapedName</name>
   <type>0</type>
   <snmp_community/>
   <multiplier>0</multiplier>
   <snmp_oid/>
-  <key>perf_counter[&quot;\$application\$name&quot;]</key>
+  <key>perf_counter[&quot;\$application\$escapedName&quot;]</key>
   <delay>$CheckDelay</delay>
   <history>$KeepHistory</history>
   <trends>$KeepTrends</trends>
@@ -232,7 +233,7 @@ function createZabbixItemXml ([string]$application, [string]$name, [string]$desc
   <publickey/>
   <privatekey/>
   <port/>
-  <description>$description</description>
+  <description>$escapedDescription</description>
   <inventory_link>0</inventory_link>
   <applications>
     <application>
@@ -289,13 +290,15 @@ function createZabbixDiscoveryRuleXml ([string]$application, [string]$descriptio
 }
 
 function createZabbixItemPrototypeXml ([string]$application, [string]$item, [string]$description, [int]$delta = 0) {
+    $escapedItem = [System.Security.SecurityElement]::Escape($item)
+    $escapedDescription = [System.Security.SecurityElement]::Escape($description)
     [xml]$xml = "<item_prototype>
-  <name>$item ({#PDHINSTANCE})</name>
+  <name>$escapedItem ({#PDHINSTANCE})</name>
   <type>0</type>
   <snmp_community/>
   <multiplier>0</multiplier>
   <snmp_oid/>
-  <key>perf_counter[`"\$application({#PDHINSTANCE})\$item`"]</key>
+  <key>perf_counter[`"\$application({#PDHINSTANCE})\$escapedItem`"]</key>
   <delay>$CheckDelay</delay>
   <history>$KeepHistory</history>
   <trends>$KeepTrends</trends>
@@ -322,7 +325,7 @@ function createZabbixItemPrototypeXml ([string]$application, [string]$item, [str
   <publickey/>
   <privatekey/>
   <port/>
-  <description>$description</description>
+  <description>$escapedDescription</description>
   <inventory_link>0</inventory_link>
   <applications />
   <valuemap/>
@@ -387,7 +390,7 @@ switch ($Mode) {
                 $counterInstanceNames = $pdhCategory.GetInstanceNames()
                 $pdhCounters = $pdhCategory.GetCounters($counterInstanceNames[0])
                 foreach ($pdhCounter in $pdhCounters) {
-                    $itemPrototypeXmlHook = $discoveryRuleNode.SelectSingleNode("//discovery_rule/item_prototypes")
+                    $itemPrototypeXmlHook = $discoveryRuleNode.SelectSingleNode("item_prototypes")
                     $itemPrototypeXmlHook.AppendChild($templateXml.ImportNode((createZabbixItemPrototypeXml $pdhCounter.CategoryName $pdhCounter.CounterName $pdhCounter.CounterHelp).get_DocumentElement(), $true)) | Out-Null
                 }
             }
