@@ -1,4 +1,4 @@
-﻿# pdh2zabbix.ps1
+# pdh2zabbix.ps1
 
 <#
 .SYNOPSIS
